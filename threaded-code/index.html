@@ -140,7 +140,7 @@
 <p>We are not yet at the end of our story!</p>
 <p>It turns out that code and colon (leaf and twig) words are <em>not</em> the only kinds of words in a threaded code system. What about data?</p>
 <p>I&rsquo;ll use the examples of two common Forth data types: variable and constants</p>
-<p>While there are probably other approaches, on threaded Forth systems everything in the system &ndash; including data types! &ndash; has executable behaviour. You can &ndash; and indeed <em>must</em> &ndash; run everything.</p>
+<p>While there are probably other approaches, on threaded Forth systems everything in the system &ndash; including data types! &ndash; has executable behavior. You can &ndash; and indeed <em>must</em> &ndash; run everything.</p>
 <p>What might it mean to <em>execute</em> a variable or a constant? Let&rsquo;s start with constants, since they are simpler (though both are straightforward).</p>
 <p>A constant pushes its value onto the data stack. That&rsquo;s it!</p>
 <p>Can we turn this <em>idea</em> of a constant into a structure in memory that will work with our threaded interpreter? Here is how:</p>
@@ -190,7 +190,7 @@
   10 radix !
 </pre>
 <p>changes the radix to 10 (now we are in decimal).</p>
-<p>It is out of the scope of this discussion, but every Forth system has mechanisms for creating new kinds of data with their own, specific execution behaviours.</p>
+<p>It is out of the scope of this discussion, but every Forth system has mechanisms for creating new kinds of data with their own, specific execution behaviors.</p>
 <h3 id="threaded-code-advantages"><a href="#threaded-code-advantages">Threaded code advantages</a></h3>
 <p>Elegance, simplicity, uniformity, code density.</p>
 <p>It&rsquo;s quite easy to bring up a threaded-code implementation on a new architecture, and, once running, high-level tools written for a completely different architecture are likely to work unmodified, or with very small modifications.</p>
