@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8" />
 <meta name="copyright" content="All content on muforth.nimblemachines.com is copyrighted. All rights are reserved." />
-<meta name="robots" content="index,follow" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="/-/screen.css" type="text/css" />
 <link rel="canonical" href="https://muforth.nimblemachines.com/readme/" />
@@ -603,7 +602,7 @@
                               defined using create/does>)
 </pre>
 <p>As a concrete example, assume we are writing an outside word that happens to depend on both words from <code class="forth">.forth.</code> and <code class="forth">.outside.</code>. Since it would be folly (I think &ndash; I may address this question further later on) to define an interpreter mode that searches <code class="forth">.outside.</code> then <code class="forth">.forth.</code> (or vice versa), we instead use the regular Forth compiler to define <code class="forth">.outside.</code> words &ndash; which means that <em>every</em> use of an <code class="forth">.outside.</code> word within the definition must be prefixed with <code class="forth">\o</code>. This might seem clumsy and verbose, but it has the advantage of being unambiguous.</p>
-<p>A key point to remember is this: while <em>defining</em> all the metacompiler words we are running the normal muforth interpreter and compiler: only <code class="forth">.forth.</code> and <code class="forth">.compiler.</code> are being searched. If we want to reference an <code class="forth">.outside.</code> word that we just defined, we have to be explicit about it: eg, "<code class="forth">\o here</code>" .</p>
+<p>A key point to remember is this: while <em>defining</em> all the metacompiler words we are running the normal muforth interpreter and compiler: only <code class="forth">.forth.</code> and <code class="forth">.compiler.</code> are being searched. If we want to reference an <code class="forth">.outside.</code> word that we just defined, we have to be explicit about it: eg, &ldquo;<code class="forth">\o here</code>&rdquo; .</p>
 <p>We can now sketch the possible &ldquo;consume&rdquo; functions for various interpreter modes. The <code class="forth">.outside.</code> words <code class="forth">remote</code>, <code class="forth">compile,</code> and <code class="forth">number,</code> respectively do remote execution on the target, compilation of a procedure call for the target, and compilation of a literal for the target. (In defining the following modes, I&rsquo;ve left off the prompts for clarity.)</p>
 <pre>
  -:  .assembler. find  if  execute ^ then
