@@ -194,11 +194,11 @@
 <p>The structural uniformity makes it very easy to extend and modify <em>without changing the underlying implementation</em>. I can add new data structures and new control structures at will without modifying the core compiler.</p>
 <p>Because we cannot inline code, everything becomes a separate word. This has an interesting side effect: it aggressively removes <em>redundancy</em> from programs, which tend to become much smaller.</p>
 <p>On occasion, threading is actually <em>faster</em> than native code. In native code a subroutine call requires the equivalent of two jumps: the call, and the return. On pipelined machines these can take several cycles.</p>
-<p>When executing code words in a threaded system, only <em>one</em> jump is required! Only <em>one</em> execution of NEXT is required to execute a word. As a result, on some systems, DTC can be faster than call/return, and ITC is often no worse that call/return (but much more powerful).</p>
+<p>When executing code words in a threaded system, only <em>one</em> jump is required! Only <em>one</em> execution of NEXT is required to execute a word. As a result, on some systems, DTC can be faster than call/return, and ITC is often no worse than call/return (but much more powerful).</p>
 <h3 id="threaded-code-disadvantages"><a href="#threaded-code-disadvantages">Threaded code disadvantages</a></h3>
 <p>Speed, and, sometimes, size.</p>
 <p>Since we lose the ablitily to do any kind of code inlining, even simple things like &ldquo;add these two numbers&rdquo; have to be written as separate routines and &ldquo;called&rdquo; via NEXT. This is obviously slower than inlining.</p>
-<p>In terms of size, on processors where an instruction is smaller than an address &ndash; eg, on 32-bit machines with 16-bit instructions &ndash; native code can sometimes be denser, but generally the &ldquo;deduplication&rdquo; that threading requires will offset this.</p>
+<p>In terms of size, on processors where an instruction is smaller than an address &ndash; eg, on 32-bit machines with 16-bit instructions &ndash; native code can sometimes be denser, but generally the &ldquo;deduplication&rdquo; that threading encourages will offset this.</p>
 <h3 id="conclusions"><a href="#conclusions">Conclusions</a></h3>
 <p>Threaded code is an extraordinarily simple and elegant way to implement language interpreters. Compared to bytecoded interpreters it is quite fast, and compilers for it are essentially trivial.</p>
 <p>Because it creates a system entirely composed of uniform pieces, extensibility of the system by users is almost unlimited, and building generic tools is dramatically simplified!</p>
