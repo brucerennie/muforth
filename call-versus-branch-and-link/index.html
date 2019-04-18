@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="copyright" content="All content on muforth.nimblemachines.com is copyrighted. All rights are reserved." />
 <meta name="description" content="The RISC &ldquo;branch-and-link&rdquo; instruction is closer in spirit to threaded code than the CISC &ldquo;call&rdquo; instruction is." />
-<meta name="keywords" content="subroutine call, call instruction, stack, branch-and-link, RISC, CISC, ARM, RISC-V, threaded code, create/does" />
+<meta name="keywords" content="subroutine call, call instruction, stack, branch-and-link, RISC, CISC, ARM, RISC-V, threaded code, create/does&gt;" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:description" content="The RISC &ldquo;branch-and-link&rdquo; instruction is closer in spirit to threaded code than the CISC &ldquo;call&rdquo; instruction is." />
 <meta name="twitter:image" content="https://muforth.nimblemachines.com/-/9s08_hc595_640x480.jpg" />
@@ -78,10 +78,10 @@
 </pre>
 <p>And our create&rsquo;d word &ndash; the most complicated of our examples &ndash; was created by the following Forth code:</p>
 <pre>
-  : incr   create ,  does> @ + ;
+  : incr   create ,  does&gt; @ + ;
   4 incr cell+
 </pre>
-<p>To further complicate this example &ndash; which is really the <em>key</em> to my argument &ndash; we will assume a tethered cross-compiled Forth, which means that the words <code class="forth">create , does></code> execute on the host machine, and the target contains only the <em>runtime</em> pieces. <code class="forth">cell+</code> and <code class="forth">incr</code> look like this:</p>
+<p>To further complicate this example &ndash; which is really the <em>key</em> to my argument &ndash; we will assume a tethered cross-compiled Forth, which means that the words <code class="forth">create , does&gt;</code> execute on the host machine, and the target contains only the <em>runtime</em> pieces. <code class="forth">cell+</code> and <code class="forth">incr</code> look like this:</p>
 <pre>
      cell+
   +----------+
@@ -101,9 +101,9 @@
            Push pfa onto D stack
            Execute NEXT
 </pre>
-<p>Two notes about <code class="forth">incr</code>. It is <em>not</em> a normal Forth word with a code field and a parameter field. It is like the built-in &ldquo;runtimes&rdquo; for colon words or variables. In this case &ndash; unlike with VARIABLE or NEST &ndash; we want to express the runtime in <em>Forth</em> code rather than machine code. But runtimes have to <em>start</em> with machine code. And a <code class="forth">does></code> runtime has to do two things: nest the execution of Forth (just as we would do if we were calling a colon word), and push the pfa of the create&rsquo;d word (<code class="forth">cell+</code> in our example.)</p>
-<p>Since this behavior is common to all <code class="forth">does></code> runtimes, we compile it <em>once</em> and <code>jal</code> to it.</p>
-<p>Thus, <code class="forth">incr</code> <em>begins</em> with <code>jal&nbsp;DODOES</code>. This is the <em>one</em> place in an ITC system where <em>code</em> specific to an architecture has to be compiled into a word&rsquo;s body. The Forth code in a parent (defining) word that specifies the execution behavior of child words &ndash; ie, the code following <code class="forth">does></code> &ndash; has to be <em>prefixed</em> by machine code of some kind so that the code field in child words can point to it. Code fields <em>always</em> point to machine code.</p>
+<p>Two notes about <code class="forth">incr</code>. It is <em>not</em> a normal Forth word with a code field and a parameter field. It is like the built-in &ldquo;runtimes&rdquo; for colon words or variables. In this case &ndash; unlike with VARIABLE or NEST &ndash; we want to express the runtime in <em>Forth</em> code rather than machine code. But runtimes have to <em>start</em> with machine code. And a <code class="forth">does&gt;</code> runtime has to do two things: nest the execution of Forth (just as we would do if we were calling a colon word), and push the pfa of the create&rsquo;d word (<code class="forth">cell+</code> in our example.)</p>
+<p>Since this behavior is common to all <code class="forth">does&gt;</code> runtimes, we compile it <em>once</em> and <code>jal</code> to it.</p>
+<p>Thus, <code class="forth">incr</code> <em>begins</em> with <code>jal&nbsp;DODOES</code>. This is the <em>one</em> place in an ITC system where <em>code</em> specific to an architecture has to be compiled into a word&rsquo;s body. The Forth code in a parent (defining) word that specifies the execution behavior of child words &ndash; ie, the code following <code class="forth">does&gt;</code> &ndash; has to be <em>prefixed</em> by machine code of some kind so that the code field in child words can point to it. Code fields <em>always</em> point to machine code.</p>
 <p>Now for the point of this exercise. Let&rsquo;s convert these three examples to &ldquo;native&rdquo; code, using jump-and-link instructions in the bodies of colon words instead of lists of pointers. Note that we use two different link registers: <code>w</code> in code fields, and <code>ra</code> in colon word bodies.</p>
 <pre>
       4*
@@ -127,7 +127,7 @@
   2                 (parameter field)
 </pre>
 <p>Again, the <code>jal&nbsp;w&nbsp;VARIABLE</code> captures the pfa in <code>w</code>.</p>
-<p>Since there is one more level of &ldquo;nesting&rdquo; in <code class="forth">does></code> words, we need a <em>third</em> link register. Let&rsquo;s use x.</p>
+<p>Since there is one more level of &ldquo;nesting&rdquo; in <code class="forth">does&gt;</code> words, we need a <em>third</em> link register. Let&rsquo;s use x.</p>
 <pre>
      cell+
   ~~~~~~~~~~~

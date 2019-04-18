@@ -124,7 +124,7 @@
 <p>It&rsquo;s sometimes useful even when not doing any kind of threading to represent literals in the normal Forth way:</p>
 <pre>
     jsr push_literal
-    &lt;literal value>
+    &lt;literal value&gt;
 </pre>
 <p>Again, on this architecture, the overhead of popping an address (to get the address of the literal), fetching both bytes, and pushing them onto the data stack, is quite unappealing. On a machine with more registers, we would simply do one or more load immediates, and then call or jump into the word that expects a literal. On the HC08 there is only one 8-bit register free for this purpose: the accumulator (A). This works fine for 8-bit literals. But what about 16-bit?</p>
 <p>I found a nice solution, but before I explain it, let&rsquo;s talk about the register allocation. Because we are compiling native-code, the hardware stack is the return stack, and we simply use jsr/rts to do our &ldquo;threading&rdquo;. There is only one option for the data stack pointer, and that&rsquo;s HX, which will occasionally have to do double duty as a generic pointer register, and in those cases we&rsquo;ll have to save and restore its value around these other uses so we don&rsquo;t clobber the data stack pointer. That&rsquo;s overhead we&rsquo;ll have to live with.</p>

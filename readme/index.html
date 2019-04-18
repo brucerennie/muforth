@@ -115,11 +115,11 @@
 <p>colorforth has the oddball feature that <code class="forth">if</code> leaves the top of stack intact. This can be useful or annoying. I thought it would be interesting to have <em>both</em> options &ndash; destructive and non- &ndash; so I defined <code class="forth">=if</code> and <code class="forth">=while</code> in addition to <code class="forth">if</code> and <code class="forth">while</code>. <code class="forth">if</code> and <code class="forth">while</code> consume the top of stack; <code class="forth">=if</code> and <code class="forth">=while</code> leave it alone.</p>
 <p>And, just as in colorforth, there is no <code class="forth">else</code> in muforth! You can always get by without it, and often the code factoring improves. For example, you can rewrite</p>
 <pre>
-  &lt;test> if  a  else  b  then  c ;
+  &lt;test&gt; if  a  else  b  then  c ;
 </pre>
 <p>as</p>
 <pre>
-  &lt;test> if  a c ^  then  b c ;
+  &lt;test&gt; if  a c ^  then  b c ;
 </pre>
 <p>colorforth doesn&rsquo;t &ldquo;smudge&rdquo; (hide) new definitions until they are complete &ndash; and neither does muforth. This makes writing recursive definitions easy, but makes redefinition harder (you have to rename the old function first).</p>
 <p>colorforth lacks the looping words <code class="forth">begin</code>, <code class="forth">while</code>, <code class="forth">until</code>, and <code class="forth">repeat</code>. (It retains <code class="forth">for</code> and <code class="forth">next</code>.) In colorforth, to write a loop, you simply &ldquo;call&rdquo; a word from within itself. For this to work, colorforth has to be tail-recursive. So muforth is as well. I liked the idea of being able to write iterations as syntactically recursive procedures, as in Lisp; however, I haven&rsquo;t used it much. ;-) See the section on the joy of tail-recursion for more details.</p>
@@ -128,10 +128,10 @@
 <p>There aren&rsquo;t even any constants defined in muforth! I calculate them, starting with 0, in startup.mu4. From there I get some basic constants I need for deciding if a character is a digit, and at that point I can write the number parsing code.</p>
 <p>The number parsing code has some flaws, and isn&rsquo;t that different from what you&rsquo;d find in F83 or an ANS Forth. The main thing I added was radix prefixes. Even though you&rsquo;re in, say, hex, you can enter a number in any of 4 radices by prefixing it with a single character:</p>
 <pre>
-  "  -> hex
-  '  -> octal
-  #  -> decimal
-  %  -> binary
+  "  -&gt; hex
+  '  -&gt; octal
+  #  -&gt; decimal
+  %  -&gt; binary
 </pre>
 <p>This can be a great headache saver.</p>
 <h2 id="forgetting"><a href="#forgetting">Forgetting</a></h2>
@@ -139,7 +139,7 @@
 <p>muforth does not define the common Forth word <code class="forth">forget</code>, nor does it define <code class="forth">empty</code>, as colorforth does. In the presence of deferred words, any kind of <code class="forth">forget</code> is error-prone. I find it better to quit and reload. This has never bothered me, or felt limiting in any way. And it certainly makes memory allocation easier. ;-)</p>
 <h2 id="strings"><a href="#strings">Strings</a></h2>
 <p>I struggled with how to define and use strings in muforth. I <em>really like</em> length-prefixed strings, but using them with C is a pain. After several false starts I arrived at a simple structure for strings that solves not only the problem of C compatibility, but a host of other problems related to having strings &ldquo;inline&rdquo; with code &ndash; the traditional Forth way.</p>
-<p>Since muforth is intended to run on modern machines with lots of caches, it seemed important to separate code and data. This affects not only strings but also create/does>. I&rsquo;ll talk about create/does> in a later section.</p>
+<p>Since muforth is intended to run on modern machines with lots of caches, it seemed important to separate code and data. This affects not only strings but also create/does&gt;. I&rsquo;ll talk about create/does&gt; in a later section.</p>
 <p>Except in a few places &ndash; <code class="forth">throw</code> comes to mind &ndash; a string in muforth is represented on the stack by a tuple: (start, length). start points to the first character; length is the count of characters. The string may or may not be zero-terminated; no muforth code depends on the presence of such termination.</p>
 <p>But what about saving strings for later use? Now we have to have a structure for strings in memory, and we&rsquo;d like it to be C compatible, since maybe the muforth word we&rsquo;re calling is going to call into the C library. Maybe we&rsquo;re opening a file by name.</p>
 <p>My conclusion was to compile the tuple</p>
@@ -159,7 +159,7 @@
 <p>Before digging into the interesting details about how muforth&rsquo;s tokenizer works I want to make a digression that I hope will shed some light on the odd data structure that I use to capture the state of the tokenizer. I should say that these ideas came <em>after</em> I had settled on the structure and written the code &ndash; long after. I wanted to find a &ldquo;formal&rdquo; (or semi-formal ;-) explanation of the data structure and why it is well-suited to tokenizing. While walking today, I think I found it.</p>
 <p>Think about what a tokenizer does. It looks at a string, a character at a time, classifying each character as a delimiter or token character. Its job is to (possibly) skip leading delimiters, collect a sequence of token characters, and (possibly) consume the delimiter following the last token character. It returns a (start, length) string representing the token. Then it somehow &ldquo;remembers&rdquo; which characters it has seen, so that the next time it gets called it will skip over them, rather than starting over at the start of the string.</p>
 <p>It peels a character off the front, does something with it, and sets aside the rest. At the lowest level, then, a tokenizer looks at successively shorter suffixes of its input string. This is the main insight that leads to our data structure. But before we get there, let&rsquo;s look at what is commonly done.</p>
-<p>Almost all Forths represent the string to be tokenized as a (start, length) tuple, and the count of characters already consumed by the tokenizer as an offset, commonly called <code class="forth">>in</code>. When <code class="forth">>in</code> is zero, we have consumed none of the string; when <code class="forth">>in</code> == length, we have consumed the entire string. If we think of <code class="forth">>in</code> as the length of the <em>prefix</em> of the string already consumed, then (length &ndash; <code class="forth">>in</code>) is the length of the suffix <em>yet</em> to be consumed. (Invariant: len(prefix) + len(suffix) == length.)</p>
+<p>Almost all Forths represent the string to be tokenized as a (start, length) tuple, and the count of characters already consumed by the tokenizer as an offset, commonly called <code class="forth">&gt;in</code>. When <code class="forth">&gt;in</code> is zero, we have consumed none of the string; when <code class="forth">&gt;in</code> == length, we have consumed the entire string. If we think of <code class="forth">&gt;in</code> as the length of the <em>prefix</em> of the string already consumed, then (length &ndash; <code class="forth">&gt;in</code>) is the length of the suffix <em>yet</em> to be consumed. (Invariant: len(prefix) + len(suffix) == length.)</p>
 <p>We should note that using (start, length) to represent successive suffixes is clumsy. Here are a few such successive suffixes:</p>
 <pre>
   (start, length)          the whole string
@@ -168,7 +168,7 @@
   ...
   (start + length, 0)      the empty suffix
 </pre>
-<p>For each successive suffix, as <code class="forth">>in</code> goes from zero to length, it is added to start, and subtracted from length.</p>
+<p>For each successive suffix, as <code class="forth">&gt;in</code> goes from zero to length, it is added to start, and subtracted from length.</p>
 <p>If we were looking at successive prefixes this would be a great way to represent things;</p>
 <pre>
   (start, length)          the whole string
@@ -192,8 +192,8 @@
 <h2 id="tokenizing-the-input"><a href="#tokenizing-the-input">Tokenizing the input</a></h2>
 <p>This is one of the cool innovations in muforth.</p>
 <p>In muforth I define a notional string type, called &ldquo;text&rdquo;, that is better suited than normal (start, length) strings to tokenizing. I say &ldquo;notional&rdquo; because it never shows up in the language, only in the C implementation. A text is something a bit odd. I&rsquo;ll explain.</p>
-<p>I discovered, in writing the tokenizer for dforth, that using a string (start, length) and an offset (past what we have seen already) was clumsy and slow. This is what Forths have traditionally done. The state of the interpreter is captured by two variables: <code class="forth">source</code> and <code class="forth">>in</code>. <code class="forth">source</code> is a double variable containing a pointer to the first character, and a length &ndash; a normal string. <code class="forth">>in</code> is an offset <em>past</em> the characters that we&rsquo;ve looked at already, in previous calls to the tokenizer.</p>
-<p>On every call to the tokenizer you first have to offset the pointer forward (by <code class="forth">>in</code>), past the text you&rsquo;ve seen already, and the count backwards (also by <code class="forth">>in</code>), since it counts characters yet to be seen. You&rsquo;re always offsetting two things. Even when consuming a single character during scanning you have to increment the pointer, and decrement the count. Two operations. Clumsy.</p>
+<p>I discovered, in writing the tokenizer for dforth, that using a string (start, length) and an offset (past what we have seen already) was clumsy and slow. This is what Forths have traditionally done. The state of the interpreter is captured by two variables: <code class="forth">source</code> and <code class="forth">&gt;in</code>. <code class="forth">source</code> is a double variable containing a pointer to the first character, and a length &ndash; a normal string. <code class="forth">&gt;in</code> is an offset <em>past</em> the characters that we&rsquo;ve looked at already, in previous calls to the tokenizer.</p>
+<p>On every call to the tokenizer you first have to offset the pointer forward (by <code class="forth">&gt;in</code>), past the text you&rsquo;ve seen already, and the count backwards (also by <code class="forth">&gt;in</code>), since it counts characters yet to be seen. You&rsquo;re always offsetting two things. Even when consuming a single character during scanning you have to increment the pointer, and decrement the count. Two operations. Clumsy.</p>
 <p>Instead, I thought, why not run everything backwards?</p>
 <p>If a string is represented by the tuple</p>
 <pre>
@@ -218,7 +218,7 @@
   first = last + trailing.
 </pre>
 <p>Now we&rsquo;re ready to look for the next token.</p>
-<p>Of course, the astute reader will be wondering about the various boundary cases when the text runs out. By being careful about trailing, we ensure that <code class="forth">first</code> is never left > 0. At the end of parsing a token it will be &lt;= 0. If no characters were found between <code class="forth">first</code> and <code class="forth">last</code>, which can only happen if <code class="forth">first</code> = 0, possibly <em>after</em> skipping leading whitespace (think about it), then <code class="forth">last</code> &ndash; <code class="forth">first</code> will be 0 as well. At end of text we <em>always</em> return the token</p>
+<p>Of course, the astute reader will be wondering about the various boundary cases when the text runs out. By being careful about trailing, we ensure that <code class="forth">first</code> is never left &gt; 0. At the end of parsing a token it will be &lt;= 0. If no characters were found between <code class="forth">first</code> and <code class="forth">last</code>, which can only happen if <code class="forth">first</code> = 0, possibly <em>after</em> skipping leading whitespace (think about it), then <code class="forth">last</code> &ndash; <code class="forth">first</code> will be 0 as well. At end of text we <em>always</em> return the token</p>
 <pre>
   (end, 0)
 </pre>
@@ -271,10 +271,10 @@
 <p>The interpreter basically looks like this:</p>
 <pre>
   : interpret  ( start length)
-    >text source 2!  first !
+    &gt;text source 2!  first !
     begin  token  dup while  consume ?stack  repeat ;
 </pre>
-<p><code class="forth">>text</code> converts (start, length) &ndash; the string we want to interpret &ndash; into (end, -length) &amp; -length, which go into source and first, respectively. (This Forth code is a bit hypothetical; this really happens in C in interpret.c.)</p>
+<p><code class="forth">&gt;text</code> converts (start, length) &ndash; the string we want to interpret &ndash; into (end, -length) &amp; -length, which go into source and first, respectively. (This Forth code is a bit hypothetical; this really happens in C in interpret.c.)</p>
 <p>The loop is simple. Get a token. If its length is 0, we&rsquo;re done. Otherwise, consume the token and then check the stack for over- &amp; underflow.</p>
 <p>Wow. That&rsquo;s it?</p>
 <p>The magic all happens in <code class="forth">consume</code>. Depending on the state of the interpreter, <code class="forth">consume</code> does wildy different things with the token.</p>
@@ -325,14 +325,14 @@
 <h2 id="structure-compiling-words"><a href="#structure-compiling-words">Structure compiling words</a></h2>
 <p>One way to write a loop is like this:</p>
 <pre>
-   begin ... &lt;test> while ... repeat
+   begin ... &lt;test&gt; while ... repeat
 </pre>
-<p><code class="forth">begin</code> marks the beginning. &lt;test> leaves a flag on the stack, which <code class="forth">while</code> consumes, falling through if true and jumping <em>past</em> <code class="forth">repeat</code> if false. <code class="forth">repeat</code> then jumps to the code following <code class="forth">begin</code>.</p>
+<p><code class="forth">begin</code> marks the beginning. &lt;test&gt; leaves a flag on the stack, which <code class="forth">while</code> consumes, falling through if true and jumping <em>past</em> <code class="forth">repeat</code> if false. <code class="forth">repeat</code> then jumps to the code following <code class="forth">begin</code>.</p>
 <p>So what gets compiled looks something like this, using labels (like &ldquo;beginning:&rdquo;) as jump destinations:</p>
 <pre>
   beginning:
     ...
-    &lt;test>
+    &lt;test&gt;
     branch if zero to end
     ...
     branch to beginning
@@ -341,11 +341,11 @@
 <p><code class="forth">begin</code> compiles nothing, but marks the top of the loop by pushing the address of beginning. <code class="forth">until</code> compiles the branch if zero. <code class="forth">repeat</code> compiles the branch to beginning, the address pushed on the stack by <code class="forth">begin</code>.</p>
 <p>Let&rsquo;s compare this to the code produced by if/then.</p>
 <pre>
-  &lt;test> if ... then
+  &lt;test&gt; if ... then
 </pre>
 <p>This compiles</p>
 <pre>
-    &lt;test>
+    &lt;test&gt;
     branch if zero to end
     ...
   end:
@@ -398,15 +398,15 @@
 <p>There is also code to generate four different kinds of branch instructions, the combinatorial product of (unconditional branch, branch if top == 0) and (pop the top, do not pop the top), and also the goo underlying for/next.</p>
 <p>Since getting at the return stack (the true hardware stack) is impossible without low-level support, there are several routines that compile various pushes, pops, and copies that involve the return stack.</p>
 <p>That&rsquo;s about it! For the x86 it&rsquo;s about 300 lines of code.</p>
-<p>All of the smarts for compiling control structures (if/then and friends), and new data structure types (create/does>) is <em>all</em> defined in Forth in startup.mu4.</p>
-<h2 id="towards-a-new-createdoes"><a href="#towards-a-new-createdoes">Towards a new create/does></a></h2>
-<p>First, let&rsquo;s talk a bit about &ldquo;old&rdquo; create/does>, what it does, and how it (used to) work.</p>
-<p>Basically, <code class="forth">create</code> creates a new word in the dictionary, and <code class="forth">does></code> causes this new word, when later executed, to execute a particular piece of code.</p>
-<p><code class="forth">create</code> and <code class="forth">does></code> are used to define &ldquo;defining words&rdquo; &ndash; words that build new kinds of data structures. The defining word contains code to create the data structure, and code to be executed by all the &ldquo;child words&rdquo; that this defining word is used to define.</p>
+<p>All of the smarts for compiling control structures (if/then and friends), and new data structure types (create/does&gt;) is <em>all</em> defined in Forth in startup.mu4.</p>
+<h2 id="towards-a-new-createdoesgt"><a href="#towards-a-new-createdoesgt">Towards a new create/does&gt;</a></h2>
+<p>First, let&rsquo;s talk a bit about &ldquo;old&rdquo; create/does&gt;, what it does, and how it (used to) work.</p>
+<p>Basically, <code class="forth">create</code> creates a new word in the dictionary, and <code class="forth">does&gt;</code> causes this new word, when later executed, to execute a particular piece of code.</p>
+<p><code class="forth">create</code> and <code class="forth">does&gt;</code> are used to define &ldquo;defining words&rdquo; &ndash; words that build new kinds of data structures. The defining word contains code to create the data structure, and code to be executed by all the &ldquo;child words&rdquo; that this defining word is used to define.</p>
 <p>So a word called &ldquo;definer&rdquo; could be written:</p>
 <pre>
-  : definer  create  &lt;build the data structure>
-              does>  &lt;do something with data structure>  ;
+  : definer  create  &lt;build the data structure&gt;
+              does&gt;  &lt;do something with data structure&gt;  ;
 </pre>
 <p>And used:</p>
 <pre>
@@ -417,7 +417,7 @@
 <pre>
   foo:
     call definer_code
-    &lt;foo's data>
+    &lt;foo's data&gt;
 </pre>
 <p>When foo is executed the call to definer_code has the side effect of <em>pushing</em> the address of foo&rsquo;s data onto the return stack. (The use of &ldquo;call&rdquo; here is confusing. call is being used for its behavior &ldquo;push address of following byte and then jump&rdquo;, which is what a call does. But normally the &ldquo;address of following byte&rdquo; is construed as a return address. Here it is used as a data address, which is popped and never used as a return address.)</p>
 <p>definer_code can then pop the data address off the return stack, and push it onto the data stack, where the definer_code can use it.</p>
@@ -430,25 +430,25 @@
 </ul>
 <p>When I started thinking about clean but clever ways to push an address of data, and then jump to a common piece of code, but without mixing code and data in the child word, I realized that it was impossible. The best I could do was to load a register with a constant, and then jump to the common code.</p>
 <p>But this, it turns out, is all you need! The constant can be a constant, with intrinsic value of its own, or it can be the address of the child word&rsquo;s data, if it has any.</p>
-<p>What this means in usage is that whereas the old-style <code class="forth">does></code> &ldquo;knew&rdquo; what address to push, my new-style <code class="forth">does></code> has to be passed a constant value to compile into the child. If the constant should be an address of a data area, then call <code class="forth">ram</code> to get an address, and pass it to <code class="forth">does></code>. Sometimes the stack manipulation is bit clumsy, but it&rsquo;s a good system in general.</p>
-<p>It wasn&rsquo;t necessary to do things this way. I could have kept the old behavior, that <code class="forth">does></code> compiles code to push the address of the next free byte of ram &ndash; in other words, that the &ldquo;constant&rdquo; it pushes is always an address. This makes the defining words look a little cleaner, but it is less efficient when you actually want to compile a constant into the data space (you have to comma it into ram when you define the word and then fetch it out again whenever you want to use it), and it doesn&rsquo;t allow for the address being anywhere but the next available byte of ram. On ROMed systems you sometimes want <code class="forth">does></code> to push a ROM address instead. This new way lets you choose which you want, by simply supplying the proper constant to <code class="forth">does></code>.</p>
-<h2 id="inside-the-guts-of-createdoes"><a href="#inside-the-guts-of-createdoes">Inside the guts of create/does></a></h2>
+<p>What this means in usage is that whereas the old-style <code class="forth">does&gt;</code> &ldquo;knew&rdquo; what address to push, my new-style <code class="forth">does&gt;</code> has to be passed a constant value to compile into the child. If the constant should be an address of a data area, then call <code class="forth">ram</code> to get an address, and pass it to <code class="forth">does&gt;</code>. Sometimes the stack manipulation is bit clumsy, but it&rsquo;s a good system in general.</p>
+<p>It wasn&rsquo;t necessary to do things this way. I could have kept the old behavior, that <code class="forth">does&gt;</code> compiles code to push the address of the next free byte of ram &ndash; in other words, that the &ldquo;constant&rdquo; it pushes is always an address. This makes the defining words look a little cleaner, but it is less efficient when you actually want to compile a constant into the data space (you have to comma it into ram when you define the word and then fetch it out again whenever you want to use it), and it doesn&rsquo;t allow for the address being anywhere but the next available byte of ram. On ROMed systems you sometimes want <code class="forth">does&gt;</code> to push a ROM address instead. This new way lets you choose which you want, by simply supplying the proper constant to <code class="forth">does&gt;</code>.</p>
+<h2 id="inside-the-guts-of-createdoesgt"><a href="#inside-the-guts-of-createdoesgt">Inside the guts of create/does&gt;</a></h2>
 <p>With that introduction, let&rsquo;s look at the gory implementation details. The code examples here are very x86-specific since at present that is the only implementation. But it&rsquo;s the ideas that I&rsquo;m interested in conveying, so hopefully this will not be a deterrent.</p>
-<p>First of all, <code class="forth">does></code> changes from compiling an <em>address</em> to compiling a <em>constant</em> &ndash; which could, of course, be an address. <code class="forth">does></code> splits the code to push a constant into two parts: a load part and a push part. The load part is the code:</p>
+<p>First of all, <code class="forth">does&gt;</code> changes from compiling an <em>address</em> to compiling a <em>constant</em> &ndash; which could, of course, be an address. <code class="forth">does&gt;</code> splits the code to push a constant into two parts: a load part and a push part. The load part is the code:</p>
 <pre>
   movl $constant,%edx
 </pre>
 <p>The push part is the call (or jump!) to push-literal. This is the same code that <code class="forth">literal</code> generates; we&rsquo;re splitting it into two parts to save code space.</p>
-<p>Here&rsquo;s how it works. Let&rsquo;s say we&rsquo;re writing an assembler and need words for addressing modes. Like many create/does> words, these consist of a <em>constant</em> and some code. The old way to do this would go something like:</p>
+<p>Here&rsquo;s how it works. Let&rsquo;s say we&rsquo;re writing an assembler and need words for addressing modes. Like many create/does&gt; words, these consist of a <em>constant</em> and some code. The old way to do this would go something like:</p>
 <pre>
-  : md  create ,  does> @  a b c ;
+  : md  create ,  does&gt; @  a b c ;
 </pre>
 <p>This is a clumsy way to work with constants &ndash; compiling them into the word only to fetch them out again &ndash; and is inefficient when compiled to native code. My modernized way looks like this:</p>
 <pre>
-  : md  create  does>  a b c ;
+  : md  create  does&gt;  a b c ;
   octal 004 md deferred
 </pre>
-<p><code class="forth">does></code> by default creates a constant, which gets pushed when the child word &ndash; <code class="forth">deferred</code> in this example &ndash; is executed. The actual code that is compiled looks like this:</p>
+<p><code class="forth">does&gt;</code> by default creates a constant, which gets pushed when the child word &ndash; <code class="forth">deferred</code> in this example &ndash; is executed. The actual code that is compiled looks like this:</p>
 <pre>
   md: call create         ; define-time
       call ;does          ; define-time
@@ -463,7 +463,7 @@
       movl $004, %edx
       jmp md_does
 </pre>
-<p>Wait a minute! How did that <code class="forth">;does</code> thing get in there? Well, <code class="forth">does></code> is actually a <em>compiler</em> word. It compiles &ldquo;call ;does&rdquo; followed by &ldquo;call push_literal&rdquo; into the word being defined &ndash; <code class="forth">md</code> in this case.</p>
+<p>Wait a minute! How did that <code class="forth">;does</code> thing get in there? Well, <code class="forth">does&gt;</code> is actually a <em>compiler</em> word. It compiles &ldquo;call ;does&rdquo; followed by &ldquo;call push_literal&rdquo; into the word being defined &ndash; <code class="forth">md</code> in this case.</p>
 <p>When <code class="forth">md</code> is called &ndash; to create a child word, or, equivalently (for OO types) an <em>instance</em> &ndash; <code class="forth">md</code> create&rsquo;s the new word and then <code class="forth">;does</code> compiles the load constant and the jump to <code class="forth">md</code>'s run-time code.</p>
 <p>If we hadn&rsquo;t split the push-constant part, the code in each child word &ndash; and there could be lots of them! &ndash; would have to have an extra call:</p>
 <pre>
@@ -482,7 +482,7 @@
 </pre>
 <p>What we have essentially done is move the &ldquo;call push_literal&rdquo;, since it is common to every child word, out of the child and into the parent.</p>
 <p>With that long-winded intro, we can now get into some of the odd subtleties of this brave new world.</p>
-<p>The first subtlety is that while <code class="forth">does></code> and <code class="forth">constant</code> &ndash; as defined below &ndash; both create some type of constant, they do it slightly differently. <code class="forth">constant</code> creates a word and writes code to push a constant &ndash; both the load and push halves of that action &ndash; and then forces a <em>tail-call conversion</em> of the call to push_literal, changing it to a <em>jump</em> and thereby ending the word. It can do nothing more than push its constant.</p>
+<p>The first subtlety is that while <code class="forth">does&gt;</code> and <code class="forth">constant</code> &ndash; as defined below &ndash; both create some type of constant, they do it slightly differently. <code class="forth">constant</code> creates a word and writes code to push a constant &ndash; both the load and push halves of that action &ndash; and then forces a <em>tail-call conversion</em> of the call to push_literal, changing it to a <em>jump</em> and thereby ending the word. It can do nothing more than push its constant.</p>
 <p>This ends up being syntactic sugar;</p>
 <pre>
   4 constant cell
@@ -497,10 +497,10 @@
     movl $4,%edx
     jmp  push_literal
 </pre>
-<p><code class="forth">does></code> is different; it leaves open &ndash; in fact encourages! &ndash; doing something exciting with the constant that has just been pushed. (Remember that this constant could be the address of some data structure.) It splits the constant-pushing task into two parts, as described above, putting the load into the child and the push into the parent, but leaves the call to push_literal as a <em>call</em> that is expected to be followed, as in <code class="forth">md</code> above, with code that processes the constant.</p>
+<p><code class="forth">does&gt;</code> is different; it leaves open &ndash; in fact encourages! &ndash; doing something exciting with the constant that has just been pushed. (Remember that this constant could be the address of some data structure.) It splits the constant-pushing task into two parts, as described above, putting the load into the child and the push into the parent, but leaves the call to push_literal as a <em>call</em> that is expected to be followed, as in <code class="forth">md</code> above, with code that processes the constant.</p>
 <p>To drive home this subtle difference, assume that we defined <code class="forth">constant</code> thus:</p>
 <pre>
-  : constant  create does> ;
+  : constant  create does&gt; ;
   4 constant cell
 </pre>
 <p>Now what do we have?</p>
@@ -518,14 +518,14 @@
 </pre>
 <p>This is slightly less efficient; it compiles extra code into the parent word &ndash; the run-time code &ldquo;jmp push_literal&rdquo; &ndash; and to execute this constant we do a jump to a jump, which is both silly and slow.</p>
 <p>Note: the trailing <code class="forth">;</code> in our example definition of <code class="forth">constant</code> above changed the &ldquo;call push_literal&rdquo; to &ldquo;jmp push_literal&rdquo;. Sneaky!</p>
-<p>The other important subtlety is that these constants &ndash; esp. when they are the address of some data structure &ndash; can be in the way when compiling said data structure. The constant that you want compiled into the child word has to be on the stack when <code class="forth">;does></code> executes. It&rsquo;s a bit clumsy, but you have to do something like this:</p>
+<p>The other important subtlety is that these constants &ndash; esp. when they are the address of some data structure &ndash; can be in the way when compiling said data structure. The constant that you want compiled into the child word has to be on the stack when <code class="forth">;does&gt;</code> executes. It&rsquo;s a bit clumsy, but you have to do something like this:</p>
 <pre>
-  : clumsy  create  ram  push  , ,  pop  does>  a b c ;
+  : clumsy  create  ram  push  , ,  pop  does&gt;  a b c ;
   thing1 thing2 clumsy example
 </pre>
 <p>I suppose you could write that like this too, with consequent changes in how the data is &ldquo;fetched&rdquo; and used in a, b, and c:</p>
 <pre>
-  : less-clumsy  create  literal  does>  a' b' c' ;
+  : less-clumsy  create  literal  does&gt;  a' b' c' ;
   thing1 thing2 less-clumsy example
 </pre>
 <p>In this case we compile <em>two</em> literals, the second one being &ldquo;split in two&rdquo; in the canonical way:</p>
@@ -547,14 +547,14 @@
     movl $thing1,%edx
     jmp  less_clumsy_does
 </pre>
-<p>With this new kind of create/does>, you choose how to do it.</p>
-<p>Having understood create/does> you&rsquo;ve tackled one of sublime mysteries of Forth. The other sublime mystery is our next subject...</p>
+<p>With this new kind of create/does&gt;, you choose how to do it.</p>
+<p>Having understood create/does&gt; you&rsquo;ve tackled one of sublime mysteries of Forth. The other sublime mystery is our next subject...</p>
 <h2 id="the-structure-and-interpretation-of-metacompilers"><a href="#the-structure-and-interpretation-of-metacompilers">The structure and interpretation of metacompilers</a></h2>
 <ul>
 <li>getting the right words &ndash; dict structure, escapes <code class="forth">\o</code> etc</li>
 <li>time phases</li>
 <li>compiling numbers</li>
-<li>finish with example of create/does></li>
+<li>finish with example of create/does&gt;</li>
 <li>be clear about inside == compiling words, outside == mostly defining words</li>
 </ul>
 <p>A metacompiler is what most people outside of Forth call a cross-compiler: a compiler that runs on one machine (the &ldquo;host&rdquo;) and compiles code for another (the &ldquo;target&rdquo;). We do not here discuss an exciting variation called the Canadian Cross, wherein we compile a cross compiler on one machine (the &ldquo;compile host&rdquo;), that executes on a second machine (the &ldquo;host&rdquo;), to compile code for a third machine (the &ldquo;target&rdquo;). While exciting, there isn&rsquo;t at the moment the need or application for this when using muforth.</p>
@@ -606,7 +606,7 @@
   \i  compile from .inside.
   \a  compile from .assembler.
   \t  compile from .target.  (occasionally useful if .target. words are
-                              defined using create/does>)
+                              defined using create/does&gt;)
 </pre>
 <p>As a concrete example, assume we are writing an outside word that happens to depend on both words from <code class="forth">.forth.</code> and <code class="forth">.outside.</code>. Since it would be folly (I think &ndash; I may address this question further later on) to define an interpreter mode that searches <code class="forth">.outside.</code> then <code class="forth">.forth.</code> (or vice versa), we instead use the regular Forth compiler to define <code class="forth">.outside.</code> words &ndash; which means that <em>every</em> use of an <code class="forth">.outside.</code> word within the definition must be prefixed with <code class="forth">\o</code>. This might seem clumsy and verbose, but it has the advantage of being unambiguous.</p>
 <p>A key point to remember is this: while <em>defining</em> all the metacompiler words we are running the normal muforth interpreter and compiler: only <code class="forth">.forth.</code> and <code class="forth">.compiler.</code> are being searched. If we want to reference an <code class="forth">.outside.</code> word that we just defined, we have to be explicit about it: eg, &ldquo;<code class="forth">\o here</code>&rdquo; .</p>
@@ -649,7 +649,7 @@
 <pre>
   inside
   : [    ( switch to outside)  meta-outside ;
-  : ^    &lt;compile return on target> ;
+  : ^    &lt;compile return on target&gt; ;
   : ;    \i ^  \i [ ;
 </pre>
 <p>These are analogous to the code in <code class="forth">.forth.</code> and <code class="forth">.compiler.</code>.</p>
@@ -664,7 +664,7 @@
 </pre>
 <h2 id="the-janus-effect-or-the-two-faces-of-defining-words"><a href="#the-janus-effect-or-the-two-faces-of-defining-words">The Janus effect; or, the two faces of defining words</a></h2>
 <p>A subtle and terribly confusing aspect of metacompilers is the definition of defining words, like <code class="forth">:</code> and <code class="forth">variable</code>. The trouble stems from their dual nature: they have two faces, one facing the host Forth, and one facing the target.</p>
-<p>All defining words are, by definition, create/does> words. Normally what happens between <code class="forth">create</code> and <code class="forth">does></code> is that we write code to build a data structure, and between <code class="forth">does></code> and <code class="forth">;</code> we write code that is executed to do something with the data. The difficulty is that, in a metacompiler, the words between <code class="forth">create</code> and <code class="forth">does></code> execute <em>on the host</em>, and the words between <code class="forth">does></code> and <code class="forth">;</code> execute <em>on the target</em>.</p>
+<p>All defining words are, by definition, create/does&gt; words. Normally what happens between <code class="forth">create</code> and <code class="forth">does&gt;</code> is that we write code to build a data structure, and between <code class="forth">does&gt;</code> and <code class="forth">;</code> we write code that is executed to do something with the data. The difficulty is that, in a metacompiler, the words between <code class="forth">create</code> and <code class="forth">does&gt;</code> execute <em>on the host</em>, and the words between <code class="forth">does&gt;</code> and <code class="forth">;</code> execute <em>on the target</em>.</p>
 <p>We are already confused enough by the aliasing of word names that naturally happens in a metacompiler; now we have to deal with words (defining words) that draw from two (or more) different sets of words, and have several distinct time phases built into them as well! Yow!</p>
 <p>This potential for utter confusion led me to move away from my past efforts at &ldquo;ease&rdquo; and &ldquo;naturalness&rdquo; in the writing of defining words, towards a more explicit way that requires the author to specify the source of all non <code class="forth">.forth.</code> words.</p>
 <p>The best way to illustrate is with an example, followed by a discussion of each token and its execution behavior.</p>
@@ -672,10 +672,10 @@
 <pre>
   outside
   : array  \o create  \o ram  swap  \o cells  \o allot
-           \o does>
+           \o does&gt;
 </pre>
 <p>Of course here my beautiful system breaks down.</p>
-<p>I need a special <code class="forth">does></code> for defining words.</p>
+<p>I need a special <code class="forth">does&gt;</code> for defining words.</p>
 <p>So, you see that meta-compilation is hard. I&rsquo;ve thought about this many times over many years, and I still can&rsquo;t get it right. ;-)</p>
 <h2 id="the-end"><a href="#the-end">The end</a></h2>
 <p>I hope this helped to explain how muforth works and why I think it&rsquo;s cool. I hope you&rsquo;ll think it&rsquo;s cool too, and use it to do interesting things!</p>

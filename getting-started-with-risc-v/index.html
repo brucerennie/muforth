@@ -57,13 +57,13 @@
 <pre>
   @ram dis
 </pre>
-<p>This will start disassembling the beginning of the Forth kernel. All memory dumping and disassembly in muforth is <em>interactive</em>; pressing &lt;RET> or n will advance; pressing &lt;BS> or p will back up; q will quit, leaving the last-viewed address on the stack.</p>
+<p>This will start disassembling the beginning of the Forth kernel. All memory dumping and disassembly in muforth is <em>interactive</em>; pressing &lt;RET&gt; or n will advance; pressing &lt;BS&gt; or p will back up; q will quit, leaving the last-viewed address on the stack.</p>
 <p>The word <code class="forth">@ram</code> is a constant; executing it pushes the address of the start of RAM (&ldquo;at-ram&rdquo;).</p>
 <p>You can also look at built-in features. The Debug ROM is interesting. To see it type</p>
 <pre>
   0800 dis
 </pre>
-<p>and keep pressing &lt;RET> to see further lines. Compare what you see here to what is documented in the <a href="https://dev.sifive.com/documentation/risc-v-external-debug-support-0-11/">debug spec version 0.11</a> <a href="https://static.dev.sifive.com/riscv-debug-spec-0.11nov12.pdf">(direct link)</a>.</p>
+<p>and keep pressing &lt;RET&gt; to see further lines. Compare what you see here to what is documented in the <a href="https://dev.sifive.com/documentation/risc-v-external-debug-support-0-11/">debug spec version 0.11</a> <a href="https://static.dev.sifive.com/riscv-debug-spec-0.11nov12.pdf">(direct link)</a>.</p>
 <h4 id="executing-target-forth-words"><a href="#executing-target-forth-words">Executing target Forth words</a></h4>
 <p>To try actually executing some code, try this:</p>
 <pre>
@@ -168,12 +168,12 @@
 <p>The behavior that you see here conforms to &ldquo;standard&rdquo; Forth practice, and is essentially a result of the <em>implementation</em>: the index value is translated (shifted along the integer &ldquo;number line&rdquo;) so that the loop terminates when the translated index crosses the threshold from <code>0000_0000</code> to <code>ffff_ffff</code> (when counting down) or from <code>ffff_ffff</code> to <code>0000_0000</code> (when counting up). You can see the translated index in the IX register during loop execution.</p>
 <p>So what about <em>indefinite</em> loops? There are two varieties of these as well: one that always executes the loop body at least once (like C&rsquo;s do...while) and one that tests the termination condition at or near the beginning (like C&rsquo;s while). Here they are:</p>
 <pre>
-  begin  &lt;loop body>  &lt;condition> until
-  begin  &lt;condition> while  &lt;loop body>  repeat
+  begin  &lt;loop body&gt;  &lt;condition&gt; until
+  begin  &lt;condition&gt; while  &lt;loop body&gt;  repeat
 </pre>
 <p>There is also an unending version that we won&rsquo;t be trying out here:</p>
 <pre>
-  begin  &lt;loop body>  again
+  begin  &lt;loop body&gt;  again
 </pre>
 <p>which is useful for the main loop of an embedded application.</p>
 <p>I&rsquo;m going to write &ldquo;bugged&rdquo; versions of these. Feel free to try them with or without the bug. Try these definitions:</p>
