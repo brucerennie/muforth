@@ -18,6 +18,18 @@
 </div>
 
 <div id="content">
+<h3 id="april-18-14:55"><a href="#april-18-14:55">2020 April 18 14:55</a></h3>
+<p>I recently discovered two very interesting historical (and, I suppose, <em>historic</em>) Forth documents:</p>
+<ul>
+<li>the <a href="http://library.nrao.edu/public/memos/comp/CDIR_17.pdf">NRAO FORTH manual for the PDP-11</a>, written by Elizabeth Rather and Chuck Moore</li>
+<li>the <a href="https://www.forth.com/resources/archive-forth-systems-software/">technical manual and source code for the RCA 1802 COSMAC version of microFORTH</a>, courtesy of <a href="https://www.forth.com/">FORTH, Inc</a>.</li>
+</ul>
+<p>The NRAO manual, written in 1974, contains a very concise but readable (and even &ldquo;friendly&rdquo;) introduction to Forth, and a detailed description (with some code in the appendix) of the PDP-11 assembler. Forth assemblers have a certain &ldquo;flavor&rdquo;, and this description captures it well.</p>
+<p>The microFORTH source code, circa 1978, includes a cross-compiler, which is extensively documented in the accompanying technical manual. This is one of the darkest corners of Forth, and is something I care deeply about. Cross-compilation is the sole <em>raison d'&ecirc;tre</em> for muforth. I haven&rsquo;t studied the microFORTH code closely, but I hope to learn something from it. The cross-compilers in muforth are all slightly different from each other, and none of them feels quite &ldquo;right&rdquo;.</p>
+<p>FORTH, Inc also published a <a href="https://www.forth.com/downloads/ANS/XCpaper.pdf">paper proposing a cross-compilation &ldquo;standard&rdquo; for Forth</a> and an accompanying <a href="https://www.forth.com/downloads/ANS/XCapp5.pdf">glossary</a>.</p>
+<p>After re-reading these, I tried a few experiments with muforth, to apply the idea of &ldquo;scopes&rdquo; to one of the cross-compilers. I had very mixed results and have shelved the investigation for now.</p>
+<p>After <em>that</em>, I started thinking about getting muforth to run under UEFI, and re-researched and re-read everything I could. Before I got too far along &ndash; I think I was reading the <a href="https://docs.microsoft.com/en-us/windows/win32/debug/pe-format">PE32+ image file specification</a> and trying to follow along in the <a href="https://github.com/tianocore/edk2/blob/master/MdePkg/Library/BasePeCoffLib/BasePeCoff.c">tianocore/EDK2 code</a> &ndash; I had to shelve that as well! UEFI kind of makes my stomach churn, and tianocore/EDK2 seems way too complicated. I still think that using muforth to explore UEFI is an interesting idea, and I&rsquo;m sure I will return to it, but part of me hopes that something else &ndash; maybe <a href="https://www.linuxboot.org/">LinuxBoot</a>? &ndash; will win the firmware wars.</p>
+<hr />
 <h3 id="march-20-18:29"><a href="#march-20-18:29">2020 March 20 18:29</a></h3>
 <p>I&rsquo;m sitting at home here in Calfornia, on voluntary lockdown to slow the spread of corona virus (COVID-19). It&rsquo;s a scary time, and because I am stuck at home, it seemed like a good time to think about, write about, and work on muforth. What else am I going to do?</p>
 <p>I&rsquo;ve been thinking a lot recently about which platforms (targets) I want to focus on. muforth is a bit scattered; there are a bunch of targets that have just the bare beginnings of support (eg, PIC18), others that have working Forth kernels but no real hardware support (eg, Cortex-M and RISC-V), and one that has been incredibly useful even though I never finished the Forth compiler (<a href="https://www.nimblemachines.com/freescale-s08/">Freescale HCS08</a>).</p>
@@ -63,7 +75,7 @@
 
 <div id="footer">
 <hr />
-<a href="mailto:%77%65%62%68%61%6d%73%74%65%72%40%6e%69%6d%62%6c%65%6d%61%63%68%69%6e%65%73%2e%63%6f%6d?subject=%5bmuforth%5d%202020%20journal">Send feedback</a> on this page (last edited 2020 March 20 23:20)<br />
+<a href="mailto:%77%65%62%68%61%6d%73%74%65%72%40%6e%69%6d%62%6c%65%6d%61%63%68%69%6e%65%73%2e%63%6f%6d?subject=%5bmuforth%5d%202020%20journal">Send feedback</a> on this page (last edited 2020 April 18 14:55)<br />
 Browse <a href="/all-pages/">all pages</a>, or return <a href="/">home</a><br />
 <a href="https://twitter.com/share?url=https%3a%2f%2fmuforth.nimblemachines.com%2f2020%2f&text=Say%20something%20nice!">Tweet</a> this page, or follow <a href="https://twitter.com/muforth">@muforth</a>
 </div>
