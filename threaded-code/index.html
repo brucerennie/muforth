@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="copyright" content="All content on muforth.nimblemachines.com is copyrighted. All rights are reserved." />
-<meta name="description" content="What it is, why it is, how it works, and why it&rsquo;s great (and not so great)." />
-<meta name="keywords" content="Forth, muforth, threaded code, ITC, DTC, NEXT, indirect-threaded code, direct-threaded code, implementation, language implementation, code field address, cfa, parameter field address, pfa" />
+<meta name="description" content="Threaded code: What it is, why it is, how it works, and why it&rsquo;s great (and not so great)." />
+<meta name="keywords" content="Forth, muforth, threaded code, ITC, DTC, NEXT, NEST, UNNEST, EXIT, DOCOL, DOCOLON, indirect-threaded code, direct-threaded code, implementation, language implementation, code field address, cfa, parameter field address, pfa" />
 <meta name="twitter:card" content="summary" />
-<meta name="twitter:description" content="What it is, why it is, how it works, and why it&rsquo;s great (and not so great)." />
+<meta name="twitter:description" content="Threaded code: What it is, why it is, how it works, and why it&rsquo;s great (and not so great)." />
 <meta name="twitter:image" content="https://muforth.nimblemachines.com/-/9s08_hc595_640x480.jpg" />
 <meta name="twitter:site" content="@muforth" />
 <meta name="twitter:title" content="Threaded code" />
@@ -33,7 +33,7 @@
 </ul>
 <p>(I was tempted to use the usual tree-structure names of &ldquo;leaf&rdquo; and &ldquo;branch&rdquo;, but branch is overloaded with the idea of a jump, which might be confusing in this context. So: twig.)</p>
 <p>The performance-minded among you are now aghast. &ldquo;What? No open-coded arithmetic? No inlining of functions?&rdquo;</p>
-<p>Yes, it&rsquo;s true. Our restructuring has a performance cost, but is has advantages too. We&rsquo;ll get to both.</p>
+<p>Yes, it&rsquo;s true. Our restructuring has a performance cost, but it has advantages too. We&rsquo;ll get to both.</p>
 <p>Since our twig routines now consist entirely of calls (except for the last instruction, a &ldquo;return&rdquo;) we can remove the call opcodes. We end up with a list of addresses. The return instruction that ended our original routine is replaced by the address of a special &ldquo;exit&rdquo; routine.</p>
 <p>The tail-recursively-minded among you will have already objected &ldquo;But that last call and return can be replaced by a jump!&rdquo; Not so with threaded code. There is no way to say we want to &ldquo;jump&rdquo; to an address rather than &ldquo;call&rdquo; it, so we lose the ability to convert tail calls to jumps. Twig routines always end with the address of the &ldquo;exit&rdquo; routine. Another disadvantage to threading. However, we soldier on.</p>
 <p>With the opcodes removed, our twig routine is no longer code. We can&rsquo;t &ldquo;call&rdquo; it and expect anything good to happen. The CPU will happily start interpreting the list of addresses as instructions and head off into the weeds.</p>
