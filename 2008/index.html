@@ -39,16 +39,16 @@
 <p>They are quite cheap &ndash; cheaper than comparable PIC or AVR parts &ndash; and you get a lot of bang for your buck. For instance, the S08QG parts in DIPs have a UART, SPI, and I2C, all standard, a good selection of timers, 8 channel 10 bit ADC, and some nice add-on features, such as clever compare logic in the ADC that causes an interrupt only when a value crosses a threshold. The USB parts have 12 bit ADC, 2 UARTS, and 2 SPI ports.</p>
 <p>Also, it&rsquo;s quite easy to get free samples, directly from Freescale, and also to buy directly from them, for very competitive prices, even down to quantity one.</p>
 <h5 id="flash"><a href="#flash">Flash</a></h5>
-<p>Unlike Atmel&rsquo;s Flash, which is only good to 10k cycles (if you&rsquo;re lucky) and has a short retention lifetime (10 years?), Freescale&rsquo;s Flash, like much of Microchip&rsquo;s, is good to 100k cycles and has a retention of more like 100 years. This might not sound like a big deal, esp for hobbyists, but philosophically I find it unappealing to use something so obsolescent as Atmel&rsquo;s chips.</p>
+<p>Unlike Atmel&rsquo;s Flash, which is only good to 10k cycles (if you&rsquo;re lucky) and has a short retention lifetime (10 years?), Freescale&rsquo;s Flash, like much of Microchip&rsquo;s, is good to 100k cycles and has a retention of more like 100 years. This might not sound like a big deal, especially for hobbyists, but philosophically I find it unappealing to use something so obsolescent as Atmel&rsquo;s chips.</p>
 <h5 id="von-neumann-architecture"><a href="#von-neumann-architecture">Von Neumann architecture</a></h5>
-<p>A feature that is here in the &ldquo;pro&rdquo; column but also has a dark underside. Since RAM and Flash exist in the same memory map, it&rsquo;s possible to execute code out of RAM &ndash; and in fact it is <em>necessary</em> to do so when executing code to program the Flash. Code in RAM make several things possible:</p>
+<p>A feature that is here in the &ldquo;pro&rdquo; column but also has a dark underside. Since RAM and Flash exist in the same memory map, it&rsquo;s possible to execute code out of RAM &ndash; and in fact it is <em>necessary</em> to do so when executing code to program the Flash. Code in RAM makes several things possible:</p>
 <ul>
 <li>self-modifying code</li>
 <li>&ldquo;specialised code&rdquo;, generated on the fly on the target</li>
 <li>nice interactive development &ndash; ie, the ability to define and execute new bits of code while &ldquo;online&rdquo; with the target</li>
 </ul>
 <h5 id="built-in-debug-architecture"><a href="#built-in-debug-architecture">Built-in debug architecture</a></h5>
-<p>This is an attractive feature, esp if you&rsquo;re going to use Freescale&rsquo;s development software, which can take full advantage of it.</p>
+<p>This is an attractive feature, especially if you&rsquo;re going to use Freescale&rsquo;s development software, which can take full advantage of it.</p>
 <p>Basically, every S08 part &ndash; even the lowliest 8 pin part &ndash; has not only a background debug mode (BDM) single-pin interface (which can be used to Flash empty parts, to reprogram parts, and to debug running code!) but also a tiny built-in in-circuit emulater (ICE). There are two code breakpoints and one data watchpoint available in hardware, with sophisticated chaining available between two of them. There is also an 8 entry trace buffer, allowing the capture of address and data bus values.</p>
 <p>Considering how &ldquo;low-end&rdquo; some of these parts are, this is quite a stunning feature.</p>
 <h5 id="quality-peripherals"><a href="#quality-peripherals">Quality peripherals</a></h5>
