@@ -2,18 +2,25 @@
 |
 | Copyright (c) 2002-2026 David Frech. (Read the LICENSE for details.)
 
-| This is version 2 of the teleprompter code. Use it rather than the
-| version 1 code in lib/teleprompter.mu4.
+| This is version 2 of the teleprompter code.
+|
+| You probably want to use version 1 - lib/teleprompter.mu4 - instead.
+|
+| I wrote this code the same day (way back in 2018!) that I wrote version
+| 1. I decided *then* that version 1 was the wrong approach, so in this
+| code I tried a different one: compiled muforth code rather than a linked
+| list of text lines. 
+|
+| Writing now, in 2026, I think verson 1 is simpler, and the fact that it
+| is pure text is an advantage rather than a disadvantage. Version 1
+| currently has more features, most importantly the story stack. This code
+| also predates the idea of calling a group of lines of text (prompts) a
+| *story*. It uses "prompter" instead.
 
 | This is code to make it easier to paste into the command line, one by one
 | and in sequence, previously-written chunks of text. It can be especially
 | useful for making screencasts, so that the viewer isn't stuck watching the
 | author painfully type and correct.
-|
-| This is the second edition of the teleprompter. The original is only a
-| few hours old and is obsolete already. By rewriting the prompter code as
-| compiled Forth code, the compiler becomes trivially simple and obvious -
-| though the underlying words are a bit tricky.
 |
 | The teleprompter interacts with the command line history in the following
 | way. Each time ^N is pressed, the next teleprompter line is pasted into the
@@ -57,14 +64,15 @@ variable tp  ( teleprompter pointer - muforth IP that points into a prompter)
 | Runtimes for compiled strings. Whether to simply *show* the text or to
 | paste into the command line buffer, add it to the history, and execute it.
 
+runtime
 : (~)  ( a len - len idx 0)    ( show)  prompt>cl  dup                      pop tp !  0 ;
 : (X)  ( a len - a len -1)  ( execute)  prompt>cl  dup cl>history  cl swap  pop tp ! -1 ;
 
-: text,  ( compile a line of text)   \ (")  #LF string, drop ;
+: text,  ( compile a line of text)   compile (")  #LF parse  scrabble drop ;
 
 compiler
-: ~  ( compile a new text line)        text,  \ (~) ;
-: X  ( compile a new executable line)  text,  \ (X) ;
+: ~  ( compile a new text line)        text,  compile (~) ;
+: X  ( compile a new executable line)  text,  compile (X) ;
 forth
 
 ( Hook into editline code. When we see a ^N, paste/exec the next prompt.)
@@ -74,12 +82,12 @@ forth
 | In case the user types ^N after loading the file but before loading any
 | teleprompter sequences of their own.
 
-: catch-22
+: empty-prompter
 prompter
 ." Nothing interesting to read. Sorry. You could try the gospel."
 end-prompter ;
 
-catch-22
+empty-prompter
 
 ( Here is an example teleprompter sequence.)
 
