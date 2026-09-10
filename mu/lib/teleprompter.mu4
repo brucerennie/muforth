@@ -2,9 +2,12 @@
 |
 | Copyright (c) 2002-2026 David Frech. (Read the LICENSE for details.)
 
+| Load this file and press ^N to see what happens!
+
 | This is version 1 of the teleprompter code. There is also a version 2,
 | lib/teleprompter2.mu4, which compiles stories into colon words instead of
-| leaving them as text. I think this version is simpler and better.
+| leaving them as text. I think this version is simpler, more flexible, and
+| less surprising to the reader.
 
 | This code makes it easy to paste into the command line, one by one and in
 | sequence, previously-written chunks of text. It can be especially useful
@@ -44,8 +47,9 @@
 |
 |   - byte-sized *cell* offset to the previous line
 |   - byte-sized *cell* offset to the next line
-|   - byte-sized *byte* (< 256) text length
-|   - bytes of the text, padded at the end to a cell boundary 
+|   - byte-sized "type" - currently ignored
+|   - byte-sized (< 256) text length
+|   - bytes of the text, padded at the end to a cell boundary
 |
 | There is no zero terminator.
 |
@@ -65,7 +69,7 @@
 
 16 array story-stack
 variable 'story      | pointer to current story in the stack
-   
+
 : empty-story-stack   story-stack cell- 'story ! ;
 
 : push-story  ( s)     'story @                          cell+ tuck !  'story ! ;
@@ -76,11 +80,16 @@ variable 'story      | pointer to current story in the stack
 | tp always points to the first byte of a compiled prompt: the offset to
 | the previous line.
 
-: tp  ( - line)  'story @ ;      | teleprompter pointer
+: tp  ( - line)  'story @ ;      | teleprompter pointer; points into the current story
+
+| This version returns the type byte. For future use.
+| tp>text  ( 'prompt - type a u)   2 + ( skip prev+next)  c@+ c@+ swap  ( type a len) ;
+
+| This version ignores the type byte. This is what we are currently using.
+: tp>text  ( 'prompt - a u)   3 + ( skip prev+next+type)  c@+ swap  ( a len) ;
 
 : tp-show-prompt  ( len idx key 'prompt - len' idx' exit?)
-   nip nip nip
-   2 + ( skip prev+next)  c@+ swap  ( a len)  tuck  cl-show  dup  0 ;
+   nip nip nip  tp>text  tuck cl-show  dup 0 ;
 
 | Pop the story stack and continue where we left off.
 : tp-pop   ( len idx key - len' idx' exit?)  pop-story  tp-show-prompt ;
@@ -107,60 +116,107 @@ variable 'story      | pointer to current story in the stack
 : fin  ( prev)  here tuck - cell/ swap  0 ,  c!  ( prev offset, 0 next offset) ;
 
 | Compile a new text line, with forward and backward links (byte-sized cell
-| offsets).
+| offsets) and a type byte.
 
-: ~  ( prev - prev')
+: text,  ( prev type - prev')
    here push  ( pointer to the start of this entry)
-   r@ - push  ( compute prev offset)
+   swap  r@ - push  ( compute prev offset)  push  ( type)
    #LF parse  ( a u)  255 min  ( limit length to fit in a byte)
-   dup  dup 3 + aligned  dup allot  ( allot space for 3 counts+string, cell-aligned)
+   dup  dup 4 + aligned  dup allot  ( allot space for 3 counts+type+string, cell-aligned)
    0 here cell- !  ( zero out last cell to remove any junk; do this before compiling
                      the pointers and the text so small texts don't get clobbered!)
-   cell/  pop cell/  r@ c!+  ( prev offset)  c!+  ( next offset)  c!+ ( length byte)
+   cell/  pop swap  pop cell/  ( a len len type next prev)
+   r@ c!+  ( prev offset)  c!+  ( next offset)  c!+ ( type)  c!+ ( length byte)
    swap cmove  ( copy string into dict)  pop  ( new prev) ;
 
-| An example story.
+| We distinguish between different types of prompt lines. The "type" byte
+| gets compiled into the line, but currently doesn't change the behavior
+| (ie, execute or not) or styling (eg, color) of the line. Having two (or
+| more) line types allows authors to express their intentions, and someday
+| this code might do something with the embedded type info!
+
+: ~|  ( prev - prev')  0 text, ;    | explanatory text; "|" suggests a comment
+: ~>  ( prev - prev')  1 text, ;    | potentially executable text
+
+| Two example stories follow. We set gospel as the "root" story; it gives
+| the user the option to read the example-nested-story, to demonstrate how
+| story nesting and ^R work.
+
+story example-nested-story
+~| You are now reading the example "nested" story.
+~| You probably got here from the gospel story.
+~| As with any other story, you can press ^N to move forward to the next line,
+~| and ^P to move backwards to the previous.
+~| If you are reading a *nested* story - like this one - you can press ^R
+~| to return to the previous story.
+~| Nested stories can be used to create tables of contents, or self-guided,
+~| hierarchical tutorials, or anything else you can think of!
+~| Press ^R to return to the gospel story.
+fin
 
 story gospel
-   ~ In the beginning was the Forth
-   ~ And the Forth was with Chuck
-   ~ And the Forth *was* Chuck
-   ~    (the very short Gospel of Forth)
-   ~ In a teleprompter story it's possible to execute code as well as show text.
-   ~ Just press return when the command line contains code.
-   ~ ld lib/rational-approx.mu4  phi   | press return to load and run
-   ~ That last bit of code just calculated two integer factors that when
-   ~ divided yield phi (the golden ratio) to 9 decimal digits of precision!
-   ~ By adding a lot of zeros at the end of the numerator we can calculate this
-   ~ ourselves, using only integer math. The decimal point is the first comma.
-   ~    75,025,000,000,000 46,368 / .
-   ~ Now that the rational approximation code is loaded, you can also try
-   ~ pi
-   ~ Like phi, we can calculate it ourselves, to check it:
-   ~    104,348,000,000,000 33,215 / .
-   ~ And the same with e and the square root of 2:
-   ~ e
-   ~ sq2
-   ~ ^R will take you back to the previous story.
-   ~ That's it! Have fun writing teleprompter stories!
+~| In the beginning was the Forth
+~| And the Forth was with Chuck
+~| And the Forth *was* Chuck
+~|    (the very short gospel of Forth)
+
+~| You are reading a teleprompter story: a series of text lines, or prompts.
+~| ^N takes you to the next line; ^P to the previous one.
+~| When you reach the beginning or the end of a story, a blank line is shown.
+~| In a teleprompter story it's possible to execute code as well as show text.
+~| Just press return when the command line contains code.
+~| If you make a mistake and try to execute something that *isn't* code,
+~| you will get a harmless "xyz not found" error. Just press ^N to keep going.
+
+~>    ld lib/rational-approx.mu4  phi   | press return to load and run
+
+~| That line of code loaded a rational approximation library and used it to
+~| calculate two integer factors that when divided yield phi (the golden ratio)
+~| to 9 decimal digits of precision!
+~| By adding a lot of zeros at the end of the numerator we can test the
+~| result ourselves, using integer math.
+~| The first comma of the result represents the decimal point.
+
+~>    75,025,000,000,000 46,368 / .
+
+~| Now that the rational approximation code is loaded, you can also try
+
+~>    pi
+
+~| As with phi, we can test the result ourselves, to check it:
+
+~>    104,348,000,000,000 33,215 / .
+
+~| And we can do the same with e and the square root of 2:
+
+~>    e
+~>    124,288,000,000,000 45,723 / .
+
+~>    sq2
+~>    47,321,000,000,000 33,461 / .
+
+~| Teleprompter stories can also be *nested*.
+
+~>    example-nested-story     | press return and then ^N to read it
+
+~| ^R will always take you back to the previous story, if there is one.
+~| That's it! Have fun writing - and reading - teleprompter stories!
 fin
 
-story example-root-story
-   ~ Nothing interesting to read. Sorry. You could try reading the
-   ~ gospel    | hint: press return, then ^N to move forward, ^P to move back
-fin
-
-| To set things up, we first clear the story stack and then execute
-| example-root-story, which pushes itself as the root story. After this,
-| pop-story refuses to pop the stack back to the "empty" state, which would
-| cause a crash if the user then typed ^N or ^P.
+| To set things up, we first clear the story stack and then execute gospel,
+| which pushes itself as the root story. After this, pop-story refuses to
+| pop the stack back to the "empty" state, which would cause a crash if the
+| user then typed ^N or ^P.
 |
-| If you to replace the example root story with one of your own, simply
-| write a new story, empty the story stack, and execute *your* story.
+| If you want to replace the example root story with one of your own,
+| simply write a new story, empty the story stack, and execute *your*
+| story.
 |
 | A root story can be used as a kind of table of contents, linking to other
-| stories by simply mentioning them. Likewise, those stories can link to
-| others, making a hierarchy of stories. This is why ^R is so important: so
-| the reader can return to where they were in the "calling" story.
+| stories simply by mentioning them. (Of course, the reader has to
+| "execute" the line containing the story reference, in order to make *it*
+| the current story.) Likewise, those stories can link to others, making a
+| hierarchy of stories. This is why ^R is so important: so the reader can
+| return to where they were in the "calling" story.
 
-empty-story-stack  example-root-story
+empty-story-stack  gospel

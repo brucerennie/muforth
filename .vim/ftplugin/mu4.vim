@@ -34,7 +34,16 @@ setlocal textwidth=75
 " Using "--" as before is also possible.
 " These are the only comments that Vim knows about. Use them and not
 " parentheses for block comments! Everything will work much better. ;-)
-setlocal comments=b:--,b:\|,b:sig\|
+" Note: I could use n: (or nb: to require whitespace after the comment) to
+" allow *nesting*. If I used nb:~ then a line starting with any number of
+" tildes would be considered a comment. That could be useful, especially if I
+" decide that ~~ is somehow meaningful: eg, maybe it means to execute the line
+" of text. I could also add ~* (or whatever) as another b: comment.
+" Just to remind the reader: b: means that whitespace is required after the
+" comment string in order to be recognized as a comment. Since Forth uses
+" whitespace to delimit tokens - including comment introducers - we will
+" always want to use b when specifying comments to Vim.
+setlocal comments=b:--,b:\|,b:sig\|,b:~\|,b:~>
 
 " In Forth anything can be a keyword; let's let Vim know that. @ means all
 " alphanumeric (including international characters); then we add all the
