@@ -56,7 +56,7 @@ setlocal comments=b:--,b:\|,b:sig\|,b:~\|,b:~>
 " in included files! For this to work, iskeyword needs to be correctly
 " defined. In particular, it needs to include dashes/hyphens, underscores, and
 " parens.
-setlocal iskeyword=@,!-~
+setlocal iskeyword=@,!-~,^)
 
 " Set the path for completions. Sadly this will only work in directories
 " that are called "muforth", not "muforth-clean" or whatever. I sometimes
